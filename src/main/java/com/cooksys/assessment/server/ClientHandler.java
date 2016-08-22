@@ -1,5 +1,6 @@
 package com.cooksys.assessment.server;
-
+import java.util.Date;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -15,13 +16,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ClientHandler implements Runnable {
 	private Logger log = LoggerFactory.getLogger(ClientHandler.class);
-
+	private LinkedBlockingQueue messages;
 	private Socket socket;
 
 	public ClientHandler(Socket socket) {
 		super();
 		this.socket = socket;
 	}
+	Date date = new Date();
+	
+	
 
 	public void run() {
 		try {
@@ -29,7 +33,9 @@ public class ClientHandler implements Runnable {
 			ObjectMapper mapper = new ObjectMapper();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			PrintWriter writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
-
+			
+			
+			
 			while (!socket.isClosed()) {
 				String raw = reader.readLine();
 				Message message = mapper.readValue(raw, Message.class);
@@ -48,6 +54,14 @@ public class ClientHandler implements Runnable {
 						writer.write(response);
 						writer.flush();
 						break;
+					case "broadcast":
+						log.info("user <{}> broadcasted <{}>", message.getUsername(), message.getContents());
+						String res1 = mapper.writeValueAsString(message);
+						writer.write(res1);
+						writer.flush();
+						break;
+					
+						
 				}
 			}
 
