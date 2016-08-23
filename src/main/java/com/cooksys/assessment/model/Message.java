@@ -1,7 +1,6 @@
 package com.cooksys.assessment.model;
 
 public class Message {
-
 	private String username;
 	private String command;
 	private String contents;
@@ -30,4 +29,7 @@ public class Message {
 		this.contents = contents;
 	}
 
+
+
+	
 }

@@ -2,6 +2,8 @@ package com.cooksys.assessment.server;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -9,6 +11,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.text.SimpleDateFormat;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,16 +23,17 @@ public class ClientHandler implements Runnable {
 	
 	private Logger log = LoggerFactory.getLogger(ClientHandler.class);
 	private Socket socket;
-	private ListOfUser allUsers;
-	private ArrayList < BufferedReader> in;
-	private ArrayList <PrintWriter> out;
-	private ArrayList < ListOfUser> userList;
+	static HashMap <String, BufferedReader> in = new HashMap <>();
+	static HashMap <String, PrintWriter> out = new HashMap <>();
+	static HashMap <String, ListOfUser> userList = new HashMap <>();
 
 	public ClientHandler(Socket socket) {
 		super();
 		this.socket = socket;
 	}
 	Date date = new Date();
+	SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy h:mm:ss a");
+	String formattedDate = sdf.format(date);
 	
 	
 
@@ -49,15 +53,27 @@ public class ClientHandler implements Runnable {
 				switch (message.getCommand()) {
 					case "connect":
 						log.info("user <{}> connected", message.getUsername());
-						this.userList.add( this.allUsers = new ListOfUser(message.getUsername(), this.socket));
-						this.in.add( reader);
-						this.out.add( writer);
+						ClientHandler.userList.put(message.getUsername(), new ListOfUser(message.getUsername(), this.socket));
+						message.setContents(formattedDate + ": " + message.getUsername() + " has connected");
+						ClientHandler.in.put(message.getUsername(), reader);
+						ClientHandler.out.put(message.getUsername(), writer);
+						for (ListOfUser users: userList.values()){
+						String connectionAlert = mapper.writeValueAsString(message);
+						out.get(users.getUserName()).write(connectionAlert);
+						out.get(users.getUserName()).flush();
+						}
 						break;
 					case "disconnect":
 						log.info("user <{}> disconnected", message.getUsername());
-						this.in.remove(message.getUsername());
-						this.out.remove(message.getUsername());
-						this.userList.remove(message.getUsername());
+						for (ListOfUser use: userList.values()){
+							message.setContents(formattedDate + ": " + message.getUsername() + " has disconnected");
+							String disconnectionAlert = mapper.writeValueAsString(message);
+							out.get(use.getUserName()).write(disconnectionAlert);
+							out.get(use.getUserName()).flush();
+						}
+						ClientHandler.in.remove(message.getUsername());
+						ClientHandler.out.remove(message.getUsername());
+						ClientHandler.userList.remove(message.getUsername());
 						this.socket.close();
 						break;
 					case "echo":
@@ -68,12 +84,59 @@ public class ClientHandler implements Runnable {
 						break;
 					case "broadcast":
 						log.info("user <{}> broadcasted <{}>", message.getUsername(), message.getContents());
-						for (ListOfUser user: userList) {
+						message.setContents(formattedDate + ": " + message.getUsername() + " (all): " + message.getContents());
+//						ClientHandler.in.put(message.getUsername(), reader);
+//						ClientHandler.out.put(message.getUsername(), writer);
+						for (ListOfUser user: userList.values()) {
 							String responseBroad = mapper.writeValueAsString(message);
-							out.write(responseBroad);
-							out.flush();	
+							out.get(user.getUserName()).write(responseBroad);
+							out.get(user.getUserName()).flush();	
 						}
 						break;
+					case "users":
+						log.info("user <{}> wants all users", message.getUsername());
+						message.setContents(formattedDate + ": " + "currently connected users: " + "\n");
+						String respondUser = mapper.writeValueAsString(message.getContents());
+						out.get(message.getUsername()).write(respondUser);
+						out.get(message.getUsername()).flush();
+							String msg = message.getContents();
+							Set<String> users = userList.keySet();
+							for (String u: users){
+							
+							
+							message.setContents(u + "\n");
+							
+							String respondUser1 = mapper.writeValueAsString(message.getContents());
+							out.get(message.getUsername()).write(respondUser1);
+							out.get(message.getUsername()).flush();
+							}
+						
+						
+						break;
+					default:
+						for (ListOfUser userName: userList.values()){
+						if(message.getCommand() == userName.getUserName() ){
+							message.setContents(formattedDate + ": " + message.getUsername() + " (all): " + message.getContents());
+							String responseBroad = mapper.writeValueAsString(message);
+							out.get(userName.getUserName()).write(responseBroad);
+							out.get(userName.getUserName()).flush();	
+						}
+				}
+						
+						
+						
+					
+					
+//					case "users":
+//						log.info("user <{}> wants all users", message.getUsername());
+//						String userResponse = mapper.ClientHandler.userList.keySet();
+//						out.get(message.getUsername()).write(userResponse);
+//						out.get(message.getUsername()).flush();
+//						break;
+						
+						
+						
+			
 					
 						
 				}

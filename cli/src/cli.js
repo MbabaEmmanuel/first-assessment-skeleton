@@ -2,25 +2,30 @@ import vorpal from 'vorpal'
 import { words } from 'lodash'
 import { connect } from 'net'
 import { Message } from './Message'
+// import { Timestamp } from './Timestamp'
 
 export const cli = vorpal()
 
 let username
 let server
+//let timestamp
+let address
+let re = /@/
 
 
 cli
   .delimiter(cli.chalk['yellow']('ftd~$'))
 
 cli
-  .mode('connect <username>')
-  .delimiter(cli.chalk['green']('connect>'))
+  .mode('connect <username> [<ipadress>] = "localhost"')
+ .delimiter(' ')
   .init(function (args, callback) {
     username = args.username
-    server = connect({ host: 'localhost', port: 8080 }, () => {
-      server.write(new Message({  username, command: 'connect' }).toJSON() + '\n')
-      callback()
-    })
+    address = args.address
+    server = connect({ host: address, port: 8080 }, () => {
+      server.write(new Message({ username, command: 'connect' }).toJSON() + '\n')
+    }
+  )
 
     server.on('data', (buffer) => {
       this.log(Message.fromJSON(buffer).toString())
@@ -29,6 +34,7 @@ cli
     server.on('end', () => {
       cli.exec('exit')
     })
+callback()
   })
   .action(function (input, callback) {
     const [ command, ...rest ] = words(input)
@@ -38,8 +44,36 @@ cli
       server.end(new Message({ username, command }).toJSON() + '\n')
     } else if (command === 'echo') {
       server.write(new Message({ username, command, contents }).toJSON() + '\n')
+      server.on('data', (buffer) => {
+
+        this.log(Message.fromJSON(buffer).toString() + '\n')
+          this.log(Message.fromJSON(buffer).toString() + '\n')
+
+      })
+
+
+    } else if (command === 'users') {
+      server.write(new Message({ username, command, contents }).toJSON() + '\n')
+      server.on('data', (buffer) => {
+
+        this.log(Message.fromJSON(buffer).toString())
+
+      })
+
+
     } else if (command === 'broadcast') {
       server.write(new Message({ username, command, contents }).toJSON() + '\n')
+      server.on('data', (buffer) => {
+
+        this.log(Message.fromJSON(buffer).toString())
+      })
+    } else if (words(command, /@/)) {
+      server.write(new Message({ username, command, contents }).toJSON() + '\n')
+      server.on('data', (buffer) => {
+
+        this.log(Message.fromJSON(buffer).toString())
+      })
+
     } else {
       this.log(`Command <${command}> was not recognized`)
     }
