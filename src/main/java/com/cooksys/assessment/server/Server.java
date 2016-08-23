@@ -1,9 +1,11 @@
 package com.cooksys.assessment.server;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.concurrent.ExecutorService;
 
 import org.slf4j.Logger;
@@ -11,7 +13,7 @@ import org.slf4j.LoggerFactory;
 
 public class Server implements Runnable {
 	private Logger log = LoggerFactory.getLogger(Server.class);
-	private ArrayList<ClientHandler> clientList;
+//	private ArrayList<ClientHandler> clientList;
 	
 	
 	private int port;
@@ -21,10 +23,11 @@ public class Server implements Runnable {
 		super();
 		this.port = port;
 		this.executor = executor;
-		clientList = new ArrayList<ClientHandler>();
+//		clientList = new ArrayList<ClientHandler>();
 	}
 	  
 
+	
 	public void run() {
 		log.info("server started");
 		ServerSocket ss;
@@ -33,10 +36,11 @@ public class Server implements Runnable {
 			while (true) {
 				Socket socket = ss.accept();
 				ClientHandler handler = new ClientHandler(socket);
-				clientList.add(handler);
-				for(ClientHandler x : clientList){
-					executor.execute(handler);
-				}
+//				clientList.add(handler);
+//				for(ClientHandler x : clientList){
+//					executor.execute(handler);
+//				}
+				executor.execute(handler);
 				
 			}
 		} catch (IOException e) {
