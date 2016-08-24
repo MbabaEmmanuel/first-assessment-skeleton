@@ -2,29 +2,29 @@ import vorpal from 'vorpal'
 import { words } from 'lodash'
 import { connect } from 'net'
 import { Message } from './Message'
-// import { Timestamp } from './Timestamp'
+
 
 export const cli = vorpal()
 
 let username
 let server
 let lastCommand
-let address
-let newCommand
-let name
+
+
+
 
 
 cli
   .delimiter(cli.chalk['yellow']('ftd~$'))
 
 cli
-  .mode('connect <username> [ipadress]')
+  .mode('connect <username> [ipaddress]')
  .delimiter(cli.chalk['green']('connected>'))
   .init(function (args, callback)
    {
       username = args.username
 
-      server = connect({ host: args.ipadress, port: 8080 }, () =>
+      server = connect({ host: args.ipaddress, port: 8080 }, () =>
       {
         server.write(new Message({ username, command: 'connect' }).toJSON() + '\n')
       })
@@ -47,6 +47,7 @@ cli
     }
       else if (command === 'echo')
         {
+
           server.write(new Message({ username, command, contents }).toJSON() + '\n')
           lastCommand = 'echo'
         }
@@ -65,7 +66,6 @@ cli
       }
       else if (command.charAt(0) === '@')
       {
-
         server.write(new Message({username, command: command, contents }).toJSON() + '\n')
         lastCommand = command
 
@@ -89,11 +89,7 @@ cli
         server.write(new Message({ username, command: lastCommand, contents: command + ' ' + contents }).toJSON() + '\n')
 
       }
-      // else if (command !== 'connect' && command !== 'disconnect' && command !== 'echo' && command !== 'broadcast'
-      //     && command.charAt(0) !==  '@' && command !== 'users' && lastCommand === directUser)
-      // {
-      //   server.write(new Message({ username, command: '@user', content: command + ' ' + contents, lastCommand }).toJSON() + '\n')
-      // }
+
       else
       {
         this.log(`Command <${command}> was not recognized`)
