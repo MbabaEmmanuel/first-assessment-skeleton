@@ -95,11 +95,11 @@ public class ClientHandler implements Runnable {
 						break;
 					case "users":
 						log.info("user <{}> wants all users", message.getUsername());
-						message.setContents(formattedDate + ": " + "currently connected users: " + "\n");
+						String msg = formattedDate + ": " + "currently connected users: " + "\n";
+						message.setContents(msg);
 						String respondUser = mapper.writeValueAsString(message.getContents());
 						out.get(message.getUsername()).write(respondUser);
 						out.get(message.getUsername()).flush();
-							String msg = message.getContents();
 							Set<String> users = userList.keySet();
 							for (String u: users){
 							
