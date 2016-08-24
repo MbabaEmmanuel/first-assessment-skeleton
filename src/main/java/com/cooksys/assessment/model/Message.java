@@ -4,7 +4,7 @@ public class Message {
 	private String username;
 	private String command;
 	private String contents;
-	private String directUser;
+
 
 	public String getUsername() {
 		return username;
@@ -31,15 +31,6 @@ public class Message {
 	}
 	
 
-	public String getDirectUser()
-	{
-		return directUser;
-	}
-
-	public void setDirectUser(String directUser)
-	{
-		this.directUser = directUser;
-	}
 
 
 

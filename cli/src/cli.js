@@ -10,74 +10,94 @@ let username
 let server
 let lastCommand
 let address
-let re = /@/
+let newCommand
+let name
 
 
 cli
   .delimiter(cli.chalk['yellow']('ftd~$'))
 
 cli
-  .mode('connect <username> [<ipadress>] = "localhost"')
+  .mode('connect <username> [ipadress]')
  .delimiter(cli.chalk['green']('connected>'))
-  .init(function (args, callback) {
-    username = args.username
-    address = args.address
-    server = connect({ host: address, port: 8080 }, () => {
-      server.write(new Message({ username, command: 'connect' }).toJSON() + '\n')
-    }
-  )
+  .init(function (args, callback)
+   {
+      username = args.username
 
-    server.on('data', (buffer) => {
-      this.log(Message.fromJSON(buffer).toString())
-    })
+      server = connect({ host: args.ipadress, port: 8080 }, () =>
+      {
+        server.write(new Message({ username, command: 'connect' }).toJSON() + '\n')
+      })
 
-    server.on('end', () => {
-      cli.exec('exit')
+      server.on('data', (buffer) => {
+        this.log(Message.fromJSON(buffer).toString())
+      })
+
+      server.on('end', () => {
+        cli.exec('exit')
     })
-callback()
+      callback()
   })
   .action(function (input, callback) {
-    const [ command, ...rest ] = words(input,/[^\s]+/g)
-    const contents = rest.join(' ')
+    let [ command, ...rest ] = words(input,/[^\s]+/g)
+    let contents = rest.join(' ')
 
     if (command === 'disconnect') {
       server.end(new Message({ username, command }).toJSON() + '\n')
-    } else if (command === 'echo') {
-      server.write(new Message({ username, command, contents }).toJSON() + '\n')
-      server.on('data', (buffer) => {
-
-        this.log(Message.fromJSON(buffer).toString() + '\n')
-          this.log(Message.fromJSON(buffer).toString() + '\n' )
-
-      })
-
-
-    } else if (command === 'users') {
-      server.write(new Message({ username, command, contents }).toJSON() + '\n')
-      server.on('data', (buffer) => {
-
-        this.log(Message.fromJSON(buffer).toString())
-
-      })
-
-
-    } else if (command === 'broadcast') {
-      server.write(new Message({ username, command, contents }).toJSON() + '\n')
-      server.on('data', (buffer) => {
-
-        this.log(Message.fromJSON(buffer).toString())
-      })
-    } else if (command.charAt(0) === '@') {
-      command = '@user'
-      server.write(new Message({ username, command, contents, directUser }).toJSON() + '\n')
-      server.on('data', (buffer) => {
-
-        this.log(Message.fromJSON(buffer).toString())
-      })
-
-    } else {
-      this.log(`Command <${command}> was not recognized`)
     }
+      else if (command === 'echo')
+        {
+          server.write(new Message({ username, command, contents }).toJSON() + '\n')
+          lastCommand = 'echo'
+        }
+
+      else if (command === 'users')
+      {
+          server.write(new Message({ username, command, contents }).toJSON() + '\n')
+
+
+      }
+      else if (command === 'broadcast')
+      {
+          server.write(new Message({ username, command, contents }).toJSON() + '\n')
+          lastCommand = 'broadcast'
+
+      }
+      else if (command.charAt(0) === '@')
+      {
+
+        server.write(new Message({username, command: command, contents }).toJSON() + '\n')
+        lastCommand = command
+
+      }
+      else if (command !== 'connect' && command !== 'disconnect' && command !== 'echo' && command !== 'broadcast'
+          && command.charAt(0) !==  '@' && command !== 'users' && lastCommand === 'echo')
+      {
+
+       server.write(new Message({ username, command: lastCommand, contents: command + ' ' + contents}).toJSON() + '\n')
+
+     }
+      else if (command !== 'connect' && command !== 'disconnect' && command !== 'echo' && command !== 'broadcast'
+          && command.charAt(0) !==  '@' && command !== 'users' && lastCommand === 'broadcast')
+      {
+        server.write(new Message({ username, command: lastCommand, contents: command + ' ' + contents }).toJSON() + '\n')
+
+      }
+      else if (command !== 'connect' && command !== 'disconnect' && command !== 'echo' && command !== 'broadcast'
+          && command.charAt(0) !==  '@' && command !== 'users' && lastCommand.charAt(0) === '@')
+      {
+        server.write(new Message({ username, command: lastCommand, contents: command + ' ' + contents }).toJSON() + '\n')
+
+      }
+      // else if (command !== 'connect' && command !== 'disconnect' && command !== 'echo' && command !== 'broadcast'
+      //     && command.charAt(0) !==  '@' && command !== 'users' && lastCommand === directUser)
+      // {
+      //   server.write(new Message({ username, command: '@user', content: command + ' ' + contents, lastCommand }).toJSON() + '\n')
+      // }
+      else
+      {
+        this.log(`Command <${command}> was not recognized`)
+      }
 
     callback()
   })

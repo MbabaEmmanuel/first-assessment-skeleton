@@ -49,6 +49,17 @@ public class ClientHandler implements Runnable {
 			while (!socket.isClosed()) {
 				String raw = reader.readLine();
 				Message message = mapper.readValue(raw, Message.class);
+				
+				
+				if(message.getCommand().charAt(0)== '@'){
+					String userss = message.getCommand().substring(1);
+					message.setContents(formattedDate + ": " + message.getUsername() + " (whispers): " + message.getContents());
+					String userResponse = mapper.writeValueAsString(message);
+					out.get(userss).write(userResponse);
+					out.get(userss).flush();
+
+//					message.setCommand("@");
+				} else {
 
 				switch (message.getCommand()) {
 					case "connect":
@@ -78,6 +89,7 @@ public class ClientHandler implements Runnable {
 						break;
 					case "echo":
 						log.info("user <{}> echoed message <{}>", message.getUsername(), message.getContents());
+						message.setContents(formattedDate + message.getUsername() + " (echo): " + message.getContents());
 						String response = mapper.writeValueAsString(message);
 						writer.write(response);
 						writer.flush();
@@ -87,59 +99,43 @@ public class ClientHandler implements Runnable {
 						message.setContents(formattedDate + ": " + message.getUsername() + " (all): " + message.getContents());
 //						ClientHandler.in.put(message.getUsername(), reader);
 //						ClientHandler.out.put(message.getUsername(), writer);
-						for (ListOfUser user: userList.values()) {
+						for (ListOfUser users: userList.values()) {
 							String responseBroad = mapper.writeValueAsString(message);
-							out.get(user.getUserName()).write(responseBroad);
-							out.get(user.getUserName()).flush();	
+							out.get(users.getUserName()).write(responseBroad);
+							out.get(users.getUserName()).flush();	
 						}
 						break;
 					case "users":
 						log.info("user <{}> wants all users", message.getUsername());
 						String msg = formattedDate + ": " + "currently connected users: " + "\n";
+						for (String user: userList.keySet()){
+							msg += "\n" + user;
+						}
 						message.setContents(msg);
-						String respondUser = mapper.writeValueAsString(message.getContents());
-						out.get(message.getUsername()).write(respondUser);
-						out.get(message.getUsername()).flush();
-							Set<String> users = userList.keySet();
-							for (String u: users){
-							
-							
-							message.setContents(u + "\n");
-							
-							String respondUser1 = mapper.writeValueAsString(message.getContents());
-							out.get(message.getUsername()).write(respondUser1);
-							out.get(message.getUsername()).flush();
-							}
-						
+						String newMes = mapper.writeValueAsString(message);
+						writer.write(newMes);
+						writer.flush();
 						
 						break;
-					default:
-						for (ListOfUser userName: userList.values()){
-						if(message.getCommand() == userName.getUserName() ){
-							message.setContents(formattedDate + ": " + message.getUsername() + " (all): " + message.getContents());
-							String responseBroad = mapper.writeValueAsString(message);
-							out.get(userName.getUserName()).write(responseBroad);
-							out.get(userName.getUserName()).flush();	
+		
+					
+						
+						
+//					case "@":
+//						for (ListOfUser users: userList.values()){
+//							if(userss == users.getUserName()){
+//								message.setContents(formattedDate + ": " + message.getUsername() + " (whispers): " + message.getContents());
+//								String userResponse = mapper.writeValueAsString(message);
+//								out.get(users.getUserName()).write(userResponse);
+//								out.get(users.getUserName()).flush();
+//							}
+//							
+//						}
+						
+//						break;	
 						}
 				}
-						
-						
-						
-					
-					
-//					case "users":
-//						log.info("user <{}> wants all users", message.getUsername());
-//						String userResponse = mapper.ClientHandler.userList.keySet();
-//						out.get(message.getUsername()).write(userResponse);
-//						out.get(message.getUsername()).flush();
-//						break;
-						
-						
-						
-			
-					
-						
-				}
+				
 			}
 
 		} catch (IOException e) {
