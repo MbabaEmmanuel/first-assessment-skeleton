@@ -19,7 +19,9 @@ cli
   .init(function (args, callback)
 
    {
+     lastCommand = 'connect'
       username = args.username
+
       server = connect({ host: args.ipaddress, port: 8080 }, () =>
 
       {
@@ -36,6 +38,7 @@ cli
     })
       callback()
   })
+  //Makes a if for all given commands and corresponding functions
   .action(function (input, callback) {
     let [ command, ...rest ] = words(input,/[^\s]+/g)
     let contents = rest.join(' ')
@@ -67,23 +70,30 @@ cli
       server.write(new Message({username, command: command, contents }).toJSON() + '\n')
       lastCommand = command
     }
-    else if (command !== 'connect' && command !== 'disconnect' && command !== 'echo' && command !== 'broadcast'
+    //if no commands are put in, use the last entered command; sets up the default
+    else if (command !== 'disconnect' && command !== 'echo' && command !== 'broadcast'
           && command.charAt(0) !==  '@' && command !== 'users' && lastCommand === 'echo')
     {
 
       server.write(new Message({ username, command: lastCommand, contents: command + ' ' + contents}).toJSON() + '\n')
 
     }
-    else if (command !== 'connect' && command !== 'disconnect' && command !== 'echo' && command !== 'broadcast'
+    else if (command !== 'disconnect' && command !== 'echo' && command !== 'broadcast'
           && command.charAt(0) !==  '@' && command !== 'users' && lastCommand === 'broadcast')
     {
       server.write(new Message({ username, command: lastCommand, contents: command + ' ' + contents }).toJSON() + '\n')
 
     }
-    else if (command !== 'connect' && command !== 'disconnect' && command !== 'echo' && command !== 'broadcast'
+    else if ( command !== 'disconnect' && command !== 'echo' && command !== 'broadcast'
           && command.charAt(0) !==  '@' && command !== 'users' && lastCommand.charAt(0) === '@')
     {
         server.write(new Message({ username, command: lastCommand, contents: command + ' ' + contents }).toJSON() + '\n')
+
+    }
+    else if ( command !== 'disconnect' && command !== 'echo' && command !== 'broadcast'
+          && command.charAt(0) !==  '@' && command !== 'users' && lastCommand === 'connect')
+    {
+        this.log(`Command <${command}> was not recognized`)
 
     }
 
