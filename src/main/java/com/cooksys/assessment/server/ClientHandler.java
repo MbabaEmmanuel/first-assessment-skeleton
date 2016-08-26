@@ -25,7 +25,7 @@ public class ClientHandler implements Runnable {
 	private Socket socket;
 	static HashMap <String, BufferedReader> inputMessage = new HashMap <>();
 	static HashMap <String, PrintWriter> outputMessage = new HashMap <>();
-	static HashMap <String, ListOfUser> userList = new HashMap <>();
+	static HashMap <String, Socket> userList = new HashMap <>();
 
 	public ClientHandler(Socket socket) {
 		super();
@@ -80,16 +80,16 @@ public class ClientHandler implements Runnable {
 						{ 
 							//if a space isn't entered or put before username, add  that username to userList,  then put user into inputmessage and outputmessage hashmap
 							log.info("user <{}> connected", message.getUsername());
-							ClientHandler.userList.put(message.getUsername(), new ListOfUser(message.getUsername(), this.socket));
+							ClientHandler.userList.put(message.getUsername(), this.socket);
 							message.setContents(ANSI_GREEN + "`" + formattedDate + ": <" + message.getUsername() + "> has connected" + "`" + ANSI_RESET);
 							ClientHandler.inputMessage.put(message.getUsername(), reader);
 							ClientHandler.outputMessage.put(message.getUsername(), writer);
 							// use output message hashmap to send message to each user
-							for (ListOfUser users: userList.values())
+							for (String users: userList.keySet())
 							{
 								String connectionAlert = mapper.writeValueAsString(message);
-								outputMessage.get(users.getUserName()).write(connectionAlert);
-								outputMessage.get(users.getUserName()).flush();
+								outputMessage.get(users).write(connectionAlert);
+								outputMessage.get(users).flush();
 							}
 						}
 						else 
@@ -106,12 +106,12 @@ public class ClientHandler implements Runnable {
 					case "disconnect":
 						// remove user from all lists and write disconnect message to all users, lastly close socket
 						log.info("user <{}> disconnected", message.getUsername());
-						for (ListOfUser userDisconnect: userList.values())
+						for (String userDisconnect: userList.keySet())
 						{
 							message.setContents(ANSI_RED + "`" + formattedDate + ": <" + message.getUsername() + "> has disconnected" + "`" + ANSI_RESET);
 							String disconnectionAlert = mapper.writeValueAsString(message);
-							outputMessage.get(userDisconnect.getUserName()).write(disconnectionAlert);
-							outputMessage.get(userDisconnect.getUserName()).flush();
+							outputMessage.get(userDisconnect).write(disconnectionAlert);
+							outputMessage.get(userDisconnect).flush();
 						}
 						ClientHandler.inputMessage.remove(message.getUsername());
 						ClientHandler.outputMessage.remove(message.getUsername());
@@ -128,11 +128,11 @@ public class ClientHandler implements Runnable {
 					case "broadcast":
 						log.info("user <{}> broadcasted <{}>", message.getUsername(), message.getContents());
 						message.setContents(ANSI_WHITE + "`" + formattedDate + ": " + message.getUsername() + " (all): " + message.getContents() + "`" + ANSI_RESET);
-						for (ListOfUser users: userList.values()) 
+						for (String user: userList.keySet()) 
 						{
 							String responseBroad = mapper.writeValueAsString(message);
-							outputMessage.get(users.getUserName()).write(responseBroad);
-							outputMessage.get(users.getUserName()).flush();	
+							outputMessage.get(user).write(responseBroad);
+							outputMessage.get(user).flush();	
 						}
 						break;
 					case "users":
